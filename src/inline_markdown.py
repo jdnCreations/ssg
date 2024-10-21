@@ -11,6 +11,7 @@ def text_to_textnodes(text):
     nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
     nodes = split_nodes_image(nodes)
     nodes = split_nodes_link(nodes)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
 
     return nodes
 
@@ -25,6 +26,12 @@ def extract_markdown_links(text):
     link_pattern = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
     matches = re.findall(link_pattern, text)
     return matches
+
+
+def extract_title(markdown):
+    if markdown.startswith("# "):
+        return markdown[2:].strip()
+    raise Exception("No h1 header.")
 
 
 def split_nodes_image(old_nodes):
@@ -80,7 +87,7 @@ def split_nodes_link(old_nodes):
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
     for node in old_nodes:
-        if node.text_type != TextType.TEXT.value or delimiter not in node.text:
+        if node.text_type != TextType.TEXT.value:
             new_nodes.append(node)
             continue
         split_nodes = []

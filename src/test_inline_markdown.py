@@ -1,6 +1,6 @@
 import unittest
 
-from inline_markdown import extract_markdown_images, extract_markdown_links, split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes
+from inline_markdown import extract_markdown_images, extract_markdown_links, extract_title, split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes
 from textnode import TextNode, TextType
 
 
@@ -66,6 +66,20 @@ class TestTextToTextNodes(unittest.TestCase):
 
 
 class TestSplitNodesDelimiter(unittest.TestCase):
+    def test_delim_underscore(self):
+        node = TextNode("This is text with a _italic_ word", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "_", TextType.ITALIC)
+        self.assertListEqual([
+            TextNode("This is text with a ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" word", TextType.TEXT)
+        ], new_nodes)
+
+    def test_delim_unclosed(self):
+        node = TextNode("This is text with a italic_ word", TextType.TEXT)
+        with self.assertRaises(ValueError):
+            split_nodes_delimiter([node], "_", TextType.ITALIC)
+
     def test_delim_bold(self):
         node = TextNode("This is text with a **bolded** word", TextType.TEXT)
         new_nodes = split_nodes_delimiter([node], "**", TextType.BOLD)
@@ -211,3 +225,29 @@ class TestExtractMarkdownLinks(unittest.TestCase):
     def test_extract_no_links(self):
         text = "This is text with no links"
         self.assertEqual(extract_markdown_links(text), [])
+
+
+class TestExtractTitle(unittest.TestCase):
+    def test_extract_title(self):
+        text = "# Hello"
+        extracted = extract_title(text)
+        self.assertEqual(extracted, "Hello")
+
+    def test_multiple_spaces(self):
+        text = "#    Hello"
+        extracted = extract_title(text)
+        self.assertEqual(extracted, "Hello")
+        text = "# Hello   "
+        extracted = extract_title(text)
+        self.assertEqual(extracted, "Hello")
+        text = " # Hello "
+        with self.assertRaisesRegex(Exception, "No h1 header."):
+            extract_title(text)
+
+    def test_empty_string(self):
+        with self.assertRaisesRegex(Exception, "No h1 header."):
+            extract_title("")
+
+    def test_no_hash(self):
+        with self.assertRaisesRegex(Exception, "No h1 header."):
+            extract_title("Hello")

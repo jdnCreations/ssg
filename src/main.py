@@ -1,6 +1,7 @@
 from genericpath import isfile
 import os
 import shutil
+from page_generator import generate_page, generate_pages_recursive
 from textnode import TextNode
 
 
@@ -43,6 +44,7 @@ def copyfiles(from_location, to_location):
 
 def main():
     source_to_destination()
+    generate_pages_recursive("content", "template.html", "public")
 
 
 main()
