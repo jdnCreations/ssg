@@ -1,47 +1,67 @@
 import unittest
 
-from textnode import TextNode
+from htmlnode import LeafNode
+from textnode import TextNode, TextType, text_node_to_html_node
 
 
 class TestTextNode(unittest.TestCase):
     def test_eq(self):
-        node = TextNode("This is a text node", "bold", "https://boot.dev")
-        node2 = TextNode("This is a text node", "bold", "https://boot.dev")
+        node = TextNode("This is a text node", TextType.TEXT)
+        node2 = TextNode("This is a text node", TextType.TEXT)
         self.assertEqual(node, node2)
 
-    def test_different_urls(self):
-        node1 = TextNode("Text node", "text", "https://google.com")
-        node2 = TextNode("Text node", "text", "https://boot.dev")
-        self.assertNotEqual(node1, node2)
+    def test_eq_false(self):
+        node = TextNode("This is a text node", TextType.TEXT)
+        node2 = TextNode("This is a text node", TextType.BOLD)
+        self.assertNotEqual(node, node2)
 
-    def test_url(self):
-        node = TextNode("Text node", "text", "https://google.com")
-        self.assertEqual(node.url, "https://google.com")
+    def test_eq_false2(self):
+        node = TextNode("This is a text node", TextType.TEXT)
+        node2 = TextNode("This is a text node2", TextType.TEXT)
+        self.assertNotEqual(node, node2)
 
-    def test_text(self):
-        node = TextNode("Text", "text")
-        self.assertEqual(node.text, "Text")
+    def test_eq_url(self):
+        node = TextNode("This is a text node", TextType.TEXT,
+                        "https://www.boot.dev")
+        node2 = TextNode("This is a text node", TextType.TEXT,
+                         "https://www.boot.dev")
+        self.assertEqual(node, node2)
 
+    def test_repr(self):
+        node = TextNode("This is a text node", TextType.TEXT,
+                        "https://www.boot.dev")
+        self.assertEqual(
+            "TextNode(This is a text node, text, https://www.boot.dev)", repr(node)
+        )
+
+
+class TestTextNodeToHTMLNode(unittest.TestCase):
     def test_text_type(self):
-        node = TextNode("Text", "link")
-        self.assertEqual(node.text_type, "link")
-    
+        node = TextNode("Hello", TextType.TEXT)
+        self.assertEqual(text_node_to_html_node(node), LeafNode(None, "Hello"))
 
-    def test_no_url(self):
-        node = TextNode("Text", "text")
-        self.assertIsNone(node.url)
+    def test_bold_type(self):
+        node = TextNode("Hello", TextType.BOLD)
+        self.assertEqual(text_node_to_html_node(node), LeafNode("b", "Hello"))
 
-    def test_diff_text(self):
-        node1 = TextNode("Text1", "text")
-        node2 = TextNode("Text2", "text")
-        self.assertNotEqual(node1, node2)
+    def test_italic_type(self):
+        node = TextNode("Hello", TextType.ITALIC)
+        self.assertEqual(text_node_to_html_node(node), LeafNode("i", "Hello"))
 
-    def test_withurl_without(self):
-        node1 = TextNode("Text", "text", "https://boot.dev")
-        node2 = TextNode("Text", "text")
-        self.assertNotEqual(node1, node2)
+    def test_code_type(self):
+        node = TextNode("Hello", TextType.CODE)
+        converted = text_node_to_html_node(node)
+        self.assertEqual(converted, LeafNode("code", "Hello"))
 
-      
+    def test_link_type(self):
+        node = TextNode("Hello", TextType.LINK, "https://google.com")
+        converted = text_node_to_html_node(node)
+        self.assertEqual(converted, LeafNode(
+            "a", "Hello", {"href": "https://google.com"}))
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_image_type(self):
+        node = TextNode("an image", TextType.IMAGE,
+                        "https://imgur.com/dpfwerj")
+        converted = text_node_to_html_node(node)
+        self.assertEqual(converted, LeafNode(
+            "img", "", {"src": "https://imgur.com/dpfwerj", "alt": "an image"}))
